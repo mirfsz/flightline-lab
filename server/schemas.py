@@ -13,7 +13,7 @@ class CoarseCell(BaseModel):
 
 class EvidenceSummary(BaseModel):
     duration_seconds: float
-    usable_passages: int
+    tonal_motion_candidates: int
     audio_quality: Literal["usable", "weak", "silent"]
     archive_coverage: str
 
@@ -27,7 +27,7 @@ class Spectrogram(BaseModel):
 
 
 class AnalysisResult(BaseModel):
-    decision: Literal["coarse synthetic match", "inconclusive"]
+    decision: Literal["coarse_region_supported", "inconclusive"]
     reason_codes: list[str]
     coarse_cells: list[CoarseCell]
     evidence_summary: EvidenceSummary

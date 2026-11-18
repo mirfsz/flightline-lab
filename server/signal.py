@@ -36,7 +36,6 @@ def extract_features(samples: NDArray, sample_rate: int = SAMPLE_RATE) -> Featur
     magnitudes = np.abs(spectrum)
     selected = (frequencies >= 80) & (frequencies <= 1800)
     band = magnitudes[selected]
-    selected_frequencies = frequencies[selected]
     # The demonstration engine has a constant emitted fundamental near 300 Hz.
     # This narrow-band ridge is deliberately not advertised as an engine classifier.
     ridge_band = (frequencies >= 180) & (frequencies <= 700)

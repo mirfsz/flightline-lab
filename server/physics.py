@@ -22,6 +22,20 @@ class SyntheticTrack:
     speed_mps: float = 225.0
 
 
+@dataclass(frozen=True)
+class ReceiverCandidate:
+    """A coarse listener cell tested against one fixed imaginary flight."""
+
+    x_m: float
+    y_m: float
+
+    def relative_track(self) -> SyntheticTrack:
+        # The fixed imaginary flight starts at (0, 10 km) and moves east.
+        # Re-centering it on a candidate receiver preserves the acoustic model
+        # while keeping the reported cell tied to the listener, not the aircraft.
+        return SyntheticTrack(-self.x_m, 10_000.0 - self.y_m)
+
+
 def source_range(track: SyntheticTrack, emission_time: NDArray) -> NDArray:
     x = track.x_start_m + track.speed_mps * emission_time
     return np.sqrt(x * x + track.cross_track_m**2 + track.altitude_m**2)
@@ -58,8 +72,9 @@ def coarse_cell_id(x_m: float, y_m: float, cell_size_m: float = GRID_METERS) -> 
     return f"S{math.floor(x_m / cell_size_m) + 20:02d}-{math.floor(y_m / cell_size_m) + 20:02d}"
 
 
-def fixed_grid() -> list[SyntheticTrack]:
-    # These are hypothetical track origins in a private imaginary coordinate frame.
-    return [SyntheticTrack(float(x), float(y))
+def fixed_grid() -> list[ReceiverCandidate]:
+    # Candidate listeners in a private imaginary coordinate frame. Restricting
+    # the toy search south of the flight avoids the one-pass mirror solution.
+    return [ReceiverCandidate(float(x), float(y))
             for x in (-20_000, -10_000, 0, 10_000, 20_000)
-            for y in (10_000, 20_000, 30_000)]
+            for y in (-20_000, -10_000, 0)]
