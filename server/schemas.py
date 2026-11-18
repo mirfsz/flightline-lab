@@ -1,4 +1,4 @@
-"""Public responses expose only coarse cells and explicitly fictional geometry."""
+"""Public responses distinguish fictional geometry from anonymous observed paths."""
 
 from typing import Literal
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class CoarseCell(BaseModel):
     cell_id: str
     label: str
-    confidence_label: Literal["synthetic fit", "ambiguous synthetic fit"]
+    confidence_label: Literal["synthetic fit", "ambiguous synthetic fit", "compatible coarse cell"]
 
 
 class EvidenceSummary(BaseModel):
@@ -68,6 +68,44 @@ class SyntheticEvidenceMap(BaseModel):
     candidates: list[MapCandidate]
 
 
+class GeographicBounds(BaseModel):
+    south: float
+    west: float
+    north: float
+    east: float
+
+
+class PublicMapCandidate(BaseModel):
+    label: str
+    cell_id: str
+    supported: bool = True
+    doppler_rmse_hz: float = Field(ge=0)
+    cell_bounds: GeographicBounds
+
+
+class PublicTrackPoint(BaseModel):
+    latitude: float
+    longitude: float
+    observed_at: str
+
+
+class PublicEvidenceMap(BaseModel):
+    coordinate_frame: Literal["geographic coarse cells"] = "geographic coarse cells"
+    synthetic_only: Literal[False] = False
+    passage_label: str = "Anonymous passage A"
+    track_points: list[PublicTrackPoint]
+    candidates: list[PublicMapCandidate]
+
+
+class ArchiveMatch(BaseModel):
+    status: Literal["installed_overlap", "region_unavailable", "time_unavailable", "not_requested"]
+    message: str
+    pack_id: str | None = None
+    observation_start: str | None = None
+    observation_end: str | None = None
+    attribution: str | None = None
+
+
 class AnalysisResult(BaseModel):
     decision: Literal["coarse_region_supported", "inconclusive"]
     reason_codes: list[str]
@@ -76,8 +114,11 @@ class AnalysisResult(BaseModel):
     spectrogram: Spectrogram
     limitations: list[str]
     synthetic_only: bool = True
+    evidence_kind: Literal["synthetic_fixture", "public_observation", "no_archive"] = "synthetic_fixture"
+    audio_is_synthetic: bool | None = None
+    archive_match: ArchiveMatch | None = None
     grid_resolution_km: float = Field(default=10.0, ge=10.0)
-    evidence_map: SyntheticEvidenceMap | None = None
+    evidence_map: SyntheticEvidenceMap | PublicEvidenceMap | None = None
 
 
 class HealthResult(BaseModel):

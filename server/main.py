@@ -1,6 +1,7 @@
 """Run with: uvicorn server.main:app --host 127.0.0.1 --port 8000."""
 
 from datetime import datetime
+import os
 from pathlib import Path
 import shutil
 from tempfile import TemporaryDirectory
@@ -9,9 +10,11 @@ import threading
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from server.matcher import analyze_features
+from server.archive import analyze_public, archive_coverage, demo_metadata, public_demo_samples
 from server.media import ALLOWED_SUFFIXES, MAX_DURATION_SECONDS, MAX_UPLOAD_BYTES, MediaError, decode_media
 from server.schemas import AnalysisResult, HealthResult
 from server.signal import extract_features, synthetic_samples, wav_bytes
@@ -51,7 +54,7 @@ class RequestSizeLimit:
 class LocalAnalysisGate:
     """Reject cross-site calls and serialize analysis before body parsing."""
 
-    protected_paths = {"/api/analyze", "/api/fixtures/analyze"}
+    protected_paths = {"/api/analyze", "/api/fixtures/analyze", "/api/demo/analyze", "/api/demo/demo.wav"}
 
     def __init__(self, app: ASGIApp):
         self.app = app
@@ -62,7 +65,10 @@ class LocalAnalysisGate:
         headers = dict(scope["headers"])
         origin = headers.get(b"origin", b"").decode("latin-1")
         fetch_site = headers.get(b"sec-fetch-site", b"").decode("latin-1")
-        if origin and origin not in ALLOWED_UI_ORIGINS:
+        host = headers.get(b"host", b"").decode("latin-1")
+        forwarded_proto = headers.get(b"x-forwarded-proto", b"http").decode("latin-1").split(",")[0].strip()
+        same_origin = f"{forwarded_proto}://{host}" if host else ""
+        if origin and origin not in ALLOWED_UI_ORIGINS and origin != same_origin:
             response = JSONResponse(
                 {"detail": {"code": "LOCAL_ORIGIN_REQUIRED", "message": "Analysis requests must come from the local Flightline Lab UI."}},
                 status_code=403,
@@ -87,6 +93,9 @@ class LocalAnalysisGate:
 
 
 ALLOWED_UI_ORIGINS = {"http://localhost:5174", "http://127.0.0.1:5174"}
+ALLOWED_UI_ORIGINS.update(
+    origin.strip() for origin in os.getenv("FLIGHTLINE_UI_ORIGINS", "").split(",") if origin.strip()
+)
 processing_slot = threading.BoundedSemaphore(1)
 app = FastAPI(title="FlightlineLab offline research API", version="0.1.0")
 app.add_middleware(RequestSizeLimit, limit=MAX_UPLOAD_BYTES + 128 * 1024)
@@ -137,7 +146,7 @@ def analyze(
             if total == 0:
                 raise HTTPException(400, {"code": "EMPTY_MEDIA", "message": "Choose a nonempty recording."})
             samples = decode_media(source, directory)
-            return analyze_features(extract_features(samples), synthetic=False)
+            return analyze_public(extract_features(samples), timestamp, time_uncertainty_minutes, search_region)
     except MediaError as exc:
         raise HTTPException(422, {"code": exc.code, "message": str(exc)}) from exc
     finally:
@@ -155,9 +164,37 @@ def fixture_wav() -> Response:
                     headers={"Content-Disposition": 'attachment; filename="flightlinelab-synthetic.wav"'})
 
 
+@app.get("/api/archive/coverage")
+def coverage() -> dict:
+    return archive_coverage()
+
+
+@app.post("/api/demo/analyze", response_model=AnalysisResult)
+def analyze_demo() -> AnalysisResult:
+    metadata = demo_metadata()
+    timestamp = datetime.fromisoformat(metadata["recording_time"].replace("Z", "+00:00"))
+    return analyze_public(extract_features(public_demo_samples()), timestamp, 0,
+                          metadata["search_region"], audio_is_synthetic=True)
+
+
+@app.get("/api/demo/demo.wav")
+def public_demo_wav() -> Response:
+    metadata = demo_metadata()
+    return Response(wav_bytes(public_demo_samples()), media_type="audio/wav",
+                    headers={"Content-Disposition": 'attachment; filename="flightlinelab-public-trajectory-synthetic-audio.wav"',
+                             "X-Recording-Time": metadata["recording_time"],
+                             "X-Search-Region": metadata["search_region"],
+                             "X-Audio-Is-Synthetic": "true"})
+
+
 @app.delete("/api/recordings")
 def clear_recordings() -> dict[str, object]:
     # There is no retained recording store. Active requests clean their own private
     # TemporaryDirectory on success or failure; this endpoint does not disrupt them.
     return {"deleted": 0, "retained_recordings": 0,
             "message": "Recordings are deleted automatically when each request finishes."}
+
+
+frontend_directory = Path(__file__).resolve().parents[1] / "dist"
+if frontend_directory.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_directory, html=True), name="frontend")

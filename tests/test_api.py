@@ -82,6 +82,16 @@ def test_cross_site_analysis_is_rejected_before_processing():
     assert response.json()["detail"]["code"] == "LOCAL_ORIGIN_REQUIRED"
 
 
+def test_same_origin_hosted_request_is_allowed():
+    response = client.post(
+        "/api/fixtures/analyze",
+        headers={"Host": "flightline-lab.example", "Origin": "https://flightline-lab.example",
+                 "X-Forwarded-Proto": "https", "Sec-Fetch-Site": "same-origin"},
+    )
+    assert response.status_code == 200
+    assert response.json()["decision"] == "coarse_region_supported"
+
+
 def test_delete_endpoint_reports_no_retained_recordings():
     assert client.delete("/api/recordings").json()["retained_recordings"] == 0
 

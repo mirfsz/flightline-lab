@@ -88,6 +88,8 @@ def analyze_features(features: Features, *, synthetic: bool) -> AnalysisResult:
         decision="inconclusive", reason_codes=reasons, coarse_cells=[],
         evidence_summary=evidence, spectrogram=features.spectrogram,
         limitations=LIMITATIONS, synthetic_only=synthetic,
+        evidence_kind="synthetic_fixture" if synthetic else "no_archive",
+        audio_is_synthetic=True if synthetic else None,
     )
     if reasons:
         return result

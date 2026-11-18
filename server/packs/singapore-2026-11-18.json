@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "pack_id": "singapore-2026-11-18-public-span-v1",
+  "region_id": "singapore",
+  "region_label": "Singapore",
+  "region_aliases": ["singapore", "sg"],
+  "date_utc": "2026-11-18",
+  "grid_resolution_km": 11.0,
+  "bounds": {"south": 1.1, "west": 103.7, "north": 1.5, "east": 104.1},
+  "provenance": {
+    "source_name": "adsb.lol public observations",
+    "source_url": "https://api.adsb.lol/v2/",
+    "captured_date_utc": "2026-11-18",
+    "license": "ODbL-1.0",
+    "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "attribution": "Contains information from adsb.lol, made available under the Open Database License (ODbL).",
+    "processing": "Three public position observations retained. Source aircraft identifiers and callsign removed; anonymous passage label assigned. No receiver data retained."
+  },
+  "passage_label": "Anonymous passage A",
+  "observations": [
+    {"captured_ms": 1795014010001, "latitude": 1.263611, "longitude": 103.941371, "alt_geom_ft": 1950, "gs_knots": 161.8, "track_deg": 22.92},
+    {"captured_ms": 1795014028002, "latitude": 1.275718, "longitude": 103.946481, "alt_geom_ft": 1700, "gs_knots": 156.4, "track_deg": 22.96},
+    {"captured_ms": 1795014034008, "latitude": 1.278397, "longitude": 103.947656, "alt_geom_ft": 1625, "gs_knots": 156.8, "track_deg": 23.29}
+  ]
+}

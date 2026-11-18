@@ -1,18 +1,25 @@
 # Flightline Lab
 
-Flightline Lab is a local, consent-based research proof of concept for testing whether aircraft-like Doppler traces in a recording can support a **coarse** region. It does not return exact coordinates, addresses, people, or real aircraft identities.
+Flightline Lab explores a simple question: can the changing sound of a passing plane help narrow down where a recording was made?
 
-The bundled fixture is entirely synthetic. Real uploads receive signal analysis but remain `inconclusive` until a properly licensed historical flight archive and a validated calibration procedure are added.
+Drop in an audio or video file, add its approximate time and general area, and the app compares the sound with installed public flight observations. It reports broad areas at least 10 km wide. It does not identify an address, a person, an exact microphone position, or a specific aircraft.
 
-## Synthetic evidence map
+## Try the two demonstrations
 
-Choose **Run the synthetic demonstration** to inspect a responsive evidence map alongside the spectrogram. It shows a highlighted 10 km receiver cell, an invented aircraft track and closest-approach marker, and a microphone uncertainty disk enclosing the entire cell. The map uses a fictional local kilometre frame with no relationship to geographic coordinates, addresses, or real flights.
+- **Public flight-data demo:** three anonymous aircraft positions observed near Singapore by adsb.lol are compared with generated sound. The flight positions are real public data; the sound is created specifically to test the matching method.
+- **Simple sound demo:** both the flight path and sound are invented. This makes it easy to inspect timing and ambiguity without implying a real-world match.
 
-The ranked panel compares the same imaginary passage across three receiver-cell hypotheses; selecting a row updates the map and timing comparison. Tone-curve RMSE in Hz is a comparison score, not a probability. The timing comparison adds sound travel delay to passage time and compares the predicted audio arrival with a tone transition. That transition uses fitted source pitch, so it is a diagnostic of the same model, not independent confirmation. The uncertainty disk is illustrative, not a calibrated microphone location estimate.
+The Singapore coverage pack spans only 24 seconds on 18 November 2026. A normal upload can use that same public-data path when its area and time overlap the pack. Other places and dates return a clear “no coverage” result instead of a fabricated location.
 
-Real uploads, including an uploaded copy of the fixture WAV, never receive map geometry or candidate identities. A future archive integration would require a regional pre-index/cache of historical data (such as adsb.lol daily archives); no archive is connected in this POC.
+Public observations are redistributed under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/). The pack removes the aircraft identifier and callsign before storage. See `server/packs/README.md` for provenance and format details.
 
-## Start locally
+## Why results stay broad
+
+Aircraft noise is not a unique fingerprint. Wind, echoes, clock errors, changing engine pitch, incomplete receiver coverage, and more than one geometrically similar area can all affect a match. Scores compare how closely a sound curve fits; they are not probabilities.
+
+The bundled public demo is a controlled validation, not proof that the method can reliably locate arbitrary recordings. A larger archive and recordings collected at known locations are needed before making stronger claims.
+
+## Run locally
 
 Requirements: Node.js, Python 3.11+, and optionally FFmpeg for compressed audio/video.
 
@@ -22,19 +29,19 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r server/requirements-dev.txt
 ```
 
-Run the API in one terminal:
+Start the API:
 
 ```sh
 .venv/bin/python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
-Run the UI in another:
+Start the interface in a second terminal:
 
 ```sh
 npm run dev
 ```
 
-Open <http://127.0.0.1:5174>. The Vite proxy sends `/api` requests to the local FastAPI service.
+Open <http://127.0.0.1:5174>.
 
 ## Verify
 
@@ -43,4 +50,10 @@ npm run build
 .venv/bin/python -m pytest tests -q
 ```
 
-See `server/README.md` for endpoint details, limits, cleanup behaviour, and model assumptions.
+## Deploy on Render
+
+The included `Dockerfile` builds the interface, installs FFmpeg and the Python analysis stack, and serves everything from one FastAPI service. `render.yaml` configures a free Render web service.
+
+Free services sleep when idle and may take about a minute to wake. Their filesystem is temporary, so coverage packs are built ahead of time and shipped read-only inside the image. Recordings are processed in a temporary directory and deleted after each request.
+
+See `server/README.md` for API details and model assumptions.
