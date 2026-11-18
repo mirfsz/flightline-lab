@@ -1,4 +1,5 @@
 import { ChangeEvent, DragEvent, FormEvent, ReactNode, useEffect, useRef, useState } from 'react'
+import EvidenceMap, { EvidenceMapData } from './EvidenceMap'
 
 type Decision = 'coarse_region_supported' | 'inconclusive' | 'no_usable_aircraft_signal' | 'insufficient_track_coverage' | 'unsupported_input'
 
@@ -28,6 +29,7 @@ type AnalysisResult = {
   }
   spectrogram?: SpectrogramData
   limitations: string[]
+  evidence_map?: EvidenceMapData | null
 }
 
 const stages = ['Extract audio', 'Find tonal motion', 'Load track fixture', 'Test coarse cells', 'Check ambiguity']
@@ -347,6 +349,10 @@ function App() {
                         </div>
                       ))}
                     </div>
+                  )}
+
+                  {result.decision === 'coarse_region_supported' && result.evidence_map?.synthetic_only && (
+                    <EvidenceMap data={result.evidence_map} />
                   )}
 
                   <div className="evidence-metrics">

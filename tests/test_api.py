@@ -18,6 +18,8 @@ def test_health_and_fixture():
     response = client.post("/api/fixtures/analyze")
     assert response.status_code == 200
     assert response.json()["decision"] == "coarse_region_supported"
+    assert response.json()["evidence_map"]["synthetic_only"] is True
+    assert response.json()["evidence_map"]["coordinate_frame"] == "fictional local kilometres"
     fixture = client.get("/api/fixtures/demo.wav")
     assert fixture.status_code == 200
     with wave.open(BytesIO(fixture.content)) as reader:
@@ -42,6 +44,7 @@ def test_silent_wav_upload_without_ffmpeg_and_cleanup(monkeypatch, tmp_path):
     assert response.status_code == 200
     assert response.json()["decision"] == "inconclusive"
     assert "SILENCE_OR_NEAR_SILENCE" in response.json()["reason_codes"]
+    assert response.json()["evidence_map"] is None
     assert list(tmp_path.iterdir()) == []
 
 
@@ -94,3 +97,15 @@ def test_invalid_media_is_cleaned_up(monkeypatch, tmp_path):
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "INVALID_MEDIA"
     assert list(tmp_path.iterdir()) == []
+
+
+def test_uploading_fixture_does_not_enable_a_map():
+    fixture = client.get("/api/fixtures/demo.wav")
+    response = client.post("/api/analyze", data=FORM,
+                           files={"media": ("synthetic.wav", fixture.content, "audio/wav")})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["decision"] == "inconclusive"
+    assert payload["evidence_map"] is None
+    assert payload["coarse_cells"] == []
+    assert "OFFLINE_ARCHIVE_UNAVAILABLE" in payload["reason_codes"]
