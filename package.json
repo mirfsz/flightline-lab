@@ -10,15 +10,15 @@
     "test": "npm run build"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "4.3.4",
-    "vite": "5.4.21",
-    "typescript": "5.8.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
     "@types/react": "19.1.2",
-    "@types/react-dom": "19.1.2"
+    "@types/react-dom": "19.1.2",
+    "typescript": "5.8.3",
+    "vite": "5.4.21"
   },
   "overrides": {
     "esbuild": "0.25.12"
