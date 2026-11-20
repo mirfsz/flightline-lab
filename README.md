@@ -2,6 +2,8 @@
 
 Flightline Lab explores a simple question: can the changing sound of a passing plane help narrow down where a recording was made?
 
+![Flightline Lab desktop interface](screenshots/flightline-home-desktop.png)
+
 Drop in an audio or video file, add its approximate time and general area, and the app compares the sound with installed public flight observations. It reports broad areas at least 10 km wide. It does not identify an address, a person, an exact microphone position, or a specific aircraft.
 
 ## Try the two demonstrations
@@ -10,6 +12,8 @@ Drop in an audio or video file, add its approximate time and general area, and t
 - **Simple sound demo:** both the flight path and sound are invented. This makes it easy to inspect timing and ambiguity without implying a real-world match.
 
 The Singapore coverage pack spans only 24 seconds on 18 November 2026. A normal upload can use that same public-data path when its area and time overlap the pack. Other places and dates return a clear “no coverage” result instead of a fabricated location.
+
+![Public flight-data result showing a broad Singapore area](screenshots/flightline-result-desktop.png)
 
 Public observations are redistributed under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/). The pack removes the aircraft identifier and callsign before storage. See `server/packs/README.md` for provenance and format details.
 
