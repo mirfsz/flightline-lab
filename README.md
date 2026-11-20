@@ -58,6 +58,8 @@ npm run build
 
 The included `Dockerfile` builds the interface, installs FFmpeg and the Python analysis stack, and serves everything from one FastAPI service. `render.yaml` configures a free Render web service.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mirfsz/flightline-lab)
+
 Free services sleep when idle and may take about a minute to wake. Their filesystem is temporary, so coverage packs are built ahead of time and shipped read-only inside the image. Recordings are processed in a temporary directory and deleted after each request.
 
 See `server/README.md` for API details and model assumptions.

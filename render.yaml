@@ -5,7 +5,4 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
-    autoDeployTrigger: commit
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.9
+    autoDeployTrigger: off
